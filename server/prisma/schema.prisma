@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  HOD
+  WARDEN
+  SECURITY
+  ADMIN
+}
+
+enum Status {
+  PENDING_HOD
+  PENDING_WARDEN
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  password      String
+  role          Role           @default(STUDENT)
+  department    String?
+  hostel_block  String?
+  profile_image String?
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
+
+  gatePasses    GatePass[]
+  notifications Notification[]
+}
+
+model GatePass {
+  id               String    @id @default(uuid())
+  student_id       String
+  student          User      @relation(fields: [student_id], references: [id])
+  reason           String
+  document_url     String?
+  status           Status    @default(PENDING_HOD)
+  rejection_reason String?
+  out_date         DateTime
+  return_date      DateTime
+  hod_approved_at  DateTime?
+  warden_approved_at DateTime?
+  exit_time        DateTime?
+  entry_time       DateTime?
+  qr_token         String?   @unique
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+}
+
+model Notification {
+  id         String   @id @default(uuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id])
+  title      String
+  message    String
+  is_read    Boolean  @default(false)
+  created_at DateTime @default(now())
+}

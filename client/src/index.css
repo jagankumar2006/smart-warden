@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer base {
+  body {
+    @apply antialiased text-gray-900 bg-gray-50 transition-colors duration-300;
+  }
+  
+  .dark body {
+    @apply text-gray-100 bg-dark-bg;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl;
+  }
+  
+  .dark .glass-card {
+    @apply bg-dark-card/50 backdrop-blur-md border border-gray-700/50 shadow-2xl;
+  }
+  
+  .btn-primary {
+    @apply px-4 py-2 bg-primary-600 text-white rounded-xl font-medium transition-all duration-300 hover:bg-primary-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] active:scale-95;
+  }
+  
+  .btn-secondary {
+    @apply px-4 py-2 bg-white text-gray-700 border border-gray-200 rounded-xl font-medium transition-all duration-300 hover:bg-gray-50 hover:shadow-md active:scale-95;
+  }
+  
+  .dark .btn-secondary {
+    @apply bg-dark-card text-gray-200 border-gray-700 hover:bg-gray-800;
+  }
+  
+  .input-field {
+    @apply w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all duration-300;
+  }
+  
+  .dark .input-field {
+    @apply border-gray-700 bg-dark-card/50 focus:bg-dark-card text-white placeholder-gray-400;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-gray-700;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-600;
+}
