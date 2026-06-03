@@ -24,6 +24,8 @@ enum Status {
   PENDING_WARDEN
   APPROVED
   REJECTED
+  EXITED
+  RETURNED
 }
 
 model User {

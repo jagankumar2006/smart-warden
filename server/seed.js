@@ -50,6 +50,19 @@ async function main() {
   });
   console.log('Created Chief Warden:', warden.email);
 
+  // 4. Create a Security Guard
+  const security = await prisma.user.upsert({
+    where: { email: 'security@smartwarden.com' },
+    update: {},
+    create: {
+      email: 'security@smartwarden.com',
+      name: 'Main Gate Security',
+      password: passwordHash,
+      role: 'SECURITY'
+    }
+  });
+  console.log('Created Security Guard:', security.email);
+
   console.log('\nSeeding finished.');
   console.log('\nYou can now log in with any of these accounts using password: password123');
 }
