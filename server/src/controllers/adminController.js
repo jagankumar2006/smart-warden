@@ -5,9 +5,10 @@ const db = require('../utils/db');
 // @access  Private/Admin
 const getUsers = async (req, res) => {
   try {
-    const [users] = await db.execute('SELECT id, name, email, role, department, year, hostler, block FROM User ORDER BY created_at DESC');
+    const [users] = await db.execute('SELECT id, name, email, role, department, hostel_block as block FROM User ORDER BY created_at DESC');
     res.json({ users });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Server error fetching users' });
   }
 };
@@ -37,7 +38,7 @@ const updateUser = async (req, res) => {
       params.push(department || null);
     }
     if (block !== undefined) {
-      updates.push('block = ?');
+      updates.push('hostel_block = ?');
       params.push(block || null);
     }
 
