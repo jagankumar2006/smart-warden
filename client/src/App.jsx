@@ -10,6 +10,7 @@ import StudentDashboard from './pages/Student/Dashboard';
 import HodDashboard from './pages/HOD/Dashboard';
 import WardenDashboard from './pages/Warden/Dashboard';
 import SecurityDashboard from './pages/Security/Dashboard';
+import AdminDashboard from './pages/Admin/Dashboard';
 import Settings from './pages/Settings/Settings';
 import Notifications from './pages/Notifications/Notifications';
 import ToastContainer from './components/ui/ToastContainer';
@@ -31,6 +32,7 @@ const DashboardRouter = () => {
     case 'HOD': return <HodDashboard />;
     case 'WARDEN': return <WardenDashboard />;
     case 'SECURITY': return <SecurityDashboard />;
+    case 'ADMIN': return <AdminDashboard />;
     default: return <div className="p-8"><h1>Welcome to Smart Warden</h1></div>;
   }
 };

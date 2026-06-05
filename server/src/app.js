@@ -31,9 +31,11 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 // We will add routes here later
 const authRoutes = require('./routes/authRoutes');
 const gatePassRoutes = require('./routes/gatePassRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/gatepass', gatePassRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
