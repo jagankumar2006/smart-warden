@@ -1,4 +1,4 @@
-const db = require('../config/db');
+const db = require('../utils/db');
 
 // @desc    Get all users (Admin only)
 // @route   GET /api/admin/users
