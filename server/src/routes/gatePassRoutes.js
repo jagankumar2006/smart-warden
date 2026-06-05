@@ -25,6 +25,6 @@ const upload = require('../middleware/uploadMiddleware');
  */
 router.post('/', protect, authorize('STUDENT'), upload.single('document'), gatePassController.createGatePass);
 router.get('/', protect, gatePassController.getGatePasses);
-router.patch('/:id/status', protect, authorize('HOD', 'WARDEN'), gatePassController.updateGatePassStatus);
+router.patch('/:id/status', protect, authorize('HOD', 'WARDEN', 'SECURITY'), gatePassController.updateGatePassStatus);
 
 module.exports = router;

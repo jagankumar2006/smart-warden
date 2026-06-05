@@ -101,6 +101,12 @@ exports.updateGatePassStatus = async (req, res) => {
       params.push(date);
       updates.push('qr_token = ?');
       params.push(crypto.randomBytes(16).toString('hex'));
+    } else if (role === 'SECURITY' && status === 'EXITED') {
+      updates.push('exit_time = ?');
+      params.push(date);
+    } else if (role === 'SECURITY' && status === 'RETURNED') {
+      updates.push('entry_time = ?');
+      params.push(date);
     }
 
     params.push(id); // for WHERE clause
