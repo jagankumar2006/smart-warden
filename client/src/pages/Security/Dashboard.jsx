@@ -76,9 +76,13 @@ const SecurityDashboard = () => {
         const msg = actionStatus === 'EXITED' ? 'Student successfully marked as EXITED.' : 'Student successfully RETURNED.';
         setScanResult({ success: true, message: msg });
         fetchPasses();
+      } else {
+        const errorData = await res.json().catch(() => null);
+        setScanResult({ success: false, message: errorData?.message || `Failed to update status. Please check server logs.` });
       }
     } catch (error) {
       console.error(`Error marking as ${actionStatus}:`, error);
+      setScanResult({ success: false, message: 'Network error or server is unreachable.' });
     }
   };
 
