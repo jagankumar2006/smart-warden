@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 
-const Sidebar = () => {
+const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
   const [isOpen, setIsOpen] = useState(true);
   const { user, logout } = useAuthStore();
   const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'));
@@ -33,21 +33,38 @@ const Sidebar = () => {
   };
 
   const navItems = [
-    { name: 'Dashboard', icon: Home, path: '/', roles: ['STUDENT', 'HOD', 'WARDEN', 'SECURITY'] },
+    { name: 'Dashboard', icon: Home, path: '/', roles: ['STUDENT', 'HOD', 'WARDEN', 'SECURITY', 'ADMIN'] },
     { name: 'My Requests', icon: FileText, path: '/requests', roles: ['STUDENT'] },
     { name: 'Approvals', icon: CheckSquare, path: '/approvals', roles: ['HOD', 'WARDEN'] },
-    { name: 'Notifications', icon: Bell, path: '/notifications', roles: ['STUDENT', 'HOD', 'WARDEN', 'SECURITY'] },
-    { name: 'Settings', icon: Settings, path: '/settings', roles: ['STUDENT', 'HOD', 'WARDEN', 'SECURITY'] },
+    { name: 'Notifications', icon: Bell, path: '/notifications', roles: ['STUDENT', 'HOD', 'WARDEN', 'SECURITY', 'ADMIN'] },
+    { name: 'Settings', icon: Settings, path: '/settings', roles: ['STUDENT', 'HOD', 'WARDEN', 'SECURITY', 'ADMIN'] },
   ];
 
   const filteredNavItems = navItems.filter(item => user && item.roles.includes(user.role));
 
   return (
-    <motion.div 
-      initial={false}
-      animate={{ width: isOpen ? 280 : 80 }}
-      className="h-screen bg-white dark:bg-dark-card border-r border-gray-200 dark:border-gray-800 flex flex-col transition-all duration-300 relative z-20"
-    >
+    <>
+      {/* Mobile Overlay */}
+      <AnimatePresence>
+        {isMobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileOpen(false)}
+            className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-30"
+          />
+        )}
+      </AnimatePresence>
+
+      <motion.div 
+        initial={false}
+        animate={{ 
+          width: isOpen ? 280 : 80,
+          x: isMobileOpen ? 0 : -280
+        }}
+        className={`fixed md:static h-screen bg-white dark:bg-dark-card border-r border-gray-200 dark:border-gray-800 flex flex-col transition-all duration-300 z-40 md:translate-x-0 ${!isMobileOpen ? 'w-[280px] -translate-x-full' : 'translate-x-0'} md:w-auto`}
+      >
       <div className="p-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
         <AnimatePresence>
           {isOpen && (
@@ -132,6 +149,7 @@ const Sidebar = () => {
         </button>
       </div>
     </motion.div>
+    </>
   );
 };
 
