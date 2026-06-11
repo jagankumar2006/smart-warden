@@ -60,10 +60,9 @@ const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
       <motion.div 
         initial={false}
         animate={{ 
-          width: isOpen ? 280 : 80,
-          x: isMobileOpen ? 0 : -280
+          width: isOpen ? 280 : 80
         }}
-        className={`fixed md:static h-screen bg-white dark:bg-dark-card border-r border-gray-200 dark:border-gray-800 flex flex-col transition-all duration-300 z-40 md:translate-x-0 ${!isMobileOpen ? 'w-[280px] -translate-x-full' : 'translate-x-0'} md:w-auto`}
+        className={`fixed md:static h-screen bg-white dark:bg-dark-card border-r border-gray-200 dark:border-gray-800 flex flex-col transition-all duration-300 z-40 ${!isMobileOpen ? '-translate-x-full' : 'translate-x-0'} md:translate-x-0 w-[280px] md:w-auto`}
       >
       <div className="p-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
         <AnimatePresence>
