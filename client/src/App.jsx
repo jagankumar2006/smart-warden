@@ -19,6 +19,17 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, user } = useAuthStore();
   
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+  
+  // Show loading spinner while fetching user data
+  if (isAuthenticated && !user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-dark-bg">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <p className="ml-4 text-gray-500 font-medium">Waking up server...</p>
+      </div>
+    );
+  }
+
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
     return <Navigate to="/unauthorized" replace />;
   }
