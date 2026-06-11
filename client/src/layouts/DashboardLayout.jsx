@@ -23,7 +23,7 @@ const DashboardLayout = () => {
               <Menu size={24} />
             </button>
             <h1 className="text-lg md:text-xl font-bold dark:text-white capitalize truncate">
-              {user?.role.toLowerCase()} Dashboard
+              {user?.role?.toLowerCase()} Dashboard
             </h1>
           </div>
           <div className="flex items-center space-x-2 md:space-x-4">
@@ -43,7 +43,7 @@ const DashboardLayout = () => {
               </div>
               <div className="hidden md:block">
                 <p className="text-sm font-semibold dark:text-white">{user?.name || 'User'}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user?.role.toLowerCase()}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user?.role?.toLowerCase()}</p>
               </div>
             </div>
           </div>
