@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { QrCode, CheckCircle, Search, User, FileText } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
+import QRScanner from '../../components/ui/QRScanner';
 
 const SecurityDashboard = () => {
   const [passes, setPasses] = useState([]);
   const [qrToken, setQrToken] = useState('');
   const [scanResult, setScanResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isScannerActive, setIsScannerActive] = useState(false);
   const { token } = useAuthStore();
 
   const fetchPasses = async () => {
@@ -30,21 +32,15 @@ const SecurityDashboard = () => {
     fetchPasses();
   }, [token]);
 
-  const handleScan = async (e) => {
-    e.preventDefault();
-    if (!qrToken.trim()) return;
-
+  const processScan = (scannedToken) => {
     setLoading(true);
     setScanResult(null);
 
     try {
-      // In a real app, there would be a dedicated endpoint for QR scanning
-      // For now, we simulate by finding the pass locally from the fetched list
-      // We check if the qrToken matches directly, or if the scanned JSON/text includes our token
       const pass = passes.find(p => 
-        qrToken.includes(p.qr_token) || 
-        qrToken === p.id || 
-        qrToken.includes(p.id.split('-')[0])
+        scannedToken.includes(p.qr_token) || 
+        scannedToken === p.id || 
+        scannedToken.includes(p.id.split('-')[0])
       );
       
       setTimeout(() => {
@@ -54,11 +50,22 @@ const SecurityDashboard = () => {
           setScanResult({ success: false, message: 'Invalid or Expired QR Token' });
         }
         setLoading(false);
-      }, 800); // Simulate network delay
+      }, 800);
     } catch (error) {
       setScanResult({ success: false, message: 'Scan failed due to server error' });
       setLoading(false);
     }
+  };
+
+  const handleScanDirect = (tokenValue) => {
+    if (!tokenValue || !tokenValue.trim()) return;
+    processScan(tokenValue.trim());
+  };
+
+  const handleScan = async (e) => {
+    e.preventDefault();
+    if (!qrToken.trim()) return;
+    processScan(qrToken.trim());
   };
 
   const handleAction = async (id, actionStatus) => {
@@ -100,29 +107,50 @@ const SecurityDashboard = () => {
         {/* Scanner Section */}
         <div className="lg:col-span-1 space-y-6">
           <div className="glass-card p-6 border-t-4 border-t-primary-500">
-            <h3 className="text-lg font-bold dark:text-white mb-4">Manual QR Entry</h3>
-            <form onSubmit={handleScan} className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-500 dark:text-gray-400 mb-2">Enter Pass ID or QR Token</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
-                  <input 
-                    type="text" 
-                    value={qrToken}
-                    onChange={(e) => setQrToken(e.target.value)}
-                    className="input-field pl-10"
-                    placeholder="e.g. 9b1deb4d..."
-                  />
-                </div>
-              </div>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold dark:text-white">QR Code Scanner</h3>
               <button 
-                type="submit" 
-                disabled={loading}
-                className="w-full btn-primary flex justify-center items-center py-3"
+                onClick={() => setIsScannerActive(!isScannerActive)}
+                className="text-sm font-medium text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 px-3 py-1.5 rounded-lg transition-colors"
               >
-                {loading ? 'Scanning...' : 'Scan / Verify'}
+                {isScannerActive ? 'Switch to Manual' : 'Use Camera'}
               </button>
-            </form>
+            </div>
+
+            {isScannerActive ? (
+              <div className="mb-4">
+                <QRScanner 
+                  onScanSuccess={(decodedText) => {
+                    setQrToken(decodedText);
+                    setIsScannerActive(false); // Stop scanner
+                    handleScanDirect(decodedText); // Directly submit the scanned text
+                  }}
+                />
+              </div>
+            ) : (
+              <form onSubmit={handleScan} className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-500 dark:text-gray-400 mb-2">Enter Pass ID or QR Token</label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+                    <input 
+                      type="text" 
+                      value={qrToken}
+                      onChange={(e) => setQrToken(e.target.value)}
+                      className="input-field pl-10"
+                      placeholder="e.g. 9b1deb4d..."
+                    />
+                  </div>
+                </div>
+                <button 
+                  type="submit" 
+                  disabled={loading}
+                  className="w-full btn-primary flex justify-center items-center py-3"
+                >
+                  {loading ? 'Scanning...' : 'Scan / Verify'}
+                </button>
+              </form>
+            )}
           </div>
 
           {/* Scan Results */}
