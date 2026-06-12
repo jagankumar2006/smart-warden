@@ -1,6 +1,8 @@
 # 🛡️ Smart Warden - Digital Hostel Gate Pass System
 
-**Smart Warden** is a comprehensive, full-stack role-based application designed to digitize and streamline the hostel gate pass workflow for educational institutions. It replaces manual paper-based logs with a secure, real-time digital authorization system.
+**Smart Warden** is a comprehensive, full-stack role-based application designed to digitize and streamline the hostel gate pass workflow for educational institutions. It replaces manual paper-based logs with a highly secure, real-time digital authorization system.
+
+---
 
 ## 🚀 Live Demo
 - **Frontend:** [https://smart-warden.vercel.app](https://smart-warden.vercel.app)
@@ -8,43 +10,83 @@
 
 ---
 
-## ✨ Key Features
-
-- **Role-Based Access Control (RBAC):** Distinct dashboards and permissions for Students, HODs, Wardens, Security Guards, and Administrators.
-- **Hierarchical Approval Workflow:** Gate passes must be approved by the HOD first, followed by the Warden, before being valid for exit.
-- **QR Code Integration:** Secure, dynamic QR codes are generated for approved passes, allowing Security Guards to scan and verify student identities instantly at the gate.
-- **Real-Time Notifications:** Powered by Socket.io, users receive instant alerts when a gate pass is approved, rejected, or pending their review.
-- **Cloud Document Storage:** Students can attach supporting documents or medical certificates using Cloudinary integration.
-- **Admin Control Center:** Global system analytics and instant user management (role assignment).
-
----
-
-## 🛠️ Tech Stack
+## 🛠️ Technology Stack & Hosting
 
 ### Frontend (Client)
-- **React.js** (Vite)
-- **Tailwind CSS** (for responsive, modern UI)
-- **Framer Motion** (for smooth micro-animations)
-- **Zustand** (for lightweight global state management)
-- **Lucide React** (for iconography)
+- **Framework**: React 19 + Vite
+- **Styling**: Tailwind CSS with dark mode support
+- **State Management**: Zustand
+- **Animations**: Framer Motion
+- **QR Code Scanning**: `html5-qrcode` (Live device camera scanning)
+- **Hosting**: Vercel (Auto-deploys via GitHub)
 
 ### Backend (Server)
-- **Node.js & Express.js**
-- **Prisma ORM**
-- **MySQL** (Relational Database hosted on Railway)
-- **Socket.io** (WebSockets for real-time bidirectional communication)
-- **JSON Web Tokens (JWT)** (for secure, stateless authentication)
-- **Cloudinary** (for secure image & document hosting)
+- **Runtime Environment**: Node.js v24 + Express.js
+- **Database ORM**: Prisma
+- **Real-Time Engine**: Socket.io
+- **Security**: JSON Web Tokens (JWT), bcrypt password hashing
+- **File Uploads**: Cloudinary API (for documents and profile pictures)
+- **Hosting**: Render (Free Tier - spins down after 15 minutes of inactivity)
+
+### Database
+- **Database System**: MySQL
+- **Hosting**: Railway
 
 ---
 
-## 🔄 System Workflow
+## 👥 Role-Based Access Control (RBAC) & Features
 
-1. **Request:** A Student logs in and submits a gate pass request (reason, dates, supporting document).
-2. **Level 1 Approval:** The Head of Department (HOD) reviews the request and approves/rejects it.
-3. **Level 2 Approval:** If HOD approves, the request moves to the Hostel Warden for final approval.
-4. **Authorization:** Once approved by the Warden, a unique QR token is generated for the student.
-5. **Exit & Entry:** The student presents the QR code to the Security Guard at the gate. The guard scans the code, confirming authorization, and marks the student as `EXITED` or `RETURNED`.
+The system is strictly divided into 5 distinct roles. Each role has access to specific dashboards and capabilities:
+
+### 1. STUDENT
+- **Dashboard**: View personal stats (total requests, pending, approved).
+- **New Request Flow**: Submit new gate pass requests, attaching optional PDF/Image proofs via Cloudinary.
+- **Pass Tracking**: Track whether a pass is pending at the HOD or WARDEN level.
+- **QR Generation**: Upon final approval by the Warden, a unique cryptographic QR code is generated. Students can display this QR code to security.
+
+### 2. HOD (Head of Department)
+- **Dashboard**: View all pending requests from students strictly belonging to their department.
+- **Approval Workflow (Step 1)**: Review the reason and attached documents. Approve or reject the request. If rejected, the pass is instantly terminated. If approved, it moves to the Warden.
+
+### 3. WARDEN
+- **Dashboard**: View requests from students in their specific hostel block that have already been approved by the HOD.
+- **Approval Workflow (Step 2)**: Final academic/residential approval. Upon Warden approval, the student receives their QR code.
+
+### 4. SECURITY
+- **Dashboard**: The gate scanner panel.
+- **Live QR Scanner**: Uses the device's built-in camera (rear camera on mobile) to scan a student's QR code.
+- **Manual Entry**: Fallback option to type the Token ID manually.
+- **Verification**: Cross-references the cryptographic token with the database. If valid and approved, it shows the student's face, block, and department.
+- **Gate Action**: Security clicks "Confirm Exit" when the student leaves (changes status to `EXITED`), and "Confirm Return" when they come back (changes status to `RETURNED`).
+
+### 5. ADMIN
+- **Dashboard**: Control center for the entire platform.
+- **Analytics**: View system-wide statistics (Total Users, Total Passes Issued, Pending Approvals).
+- **User Management**: View every registered user. Admins can promote/demote users (e.g., upgrading a registered user to "HOD" or "SECURITY").
+
+---
+
+## 🔒 Security & Privacy
+
+### Authentication & Authorization
+- Passwords are never stored in plaintext; they are salted and hashed using `bcrypt`.
+- Every API route is protected by a JWT middleware that verifies the token signature.
+- `allowedRoles` middleware strictly prevents a Student from accessing Warden API endpoints, even if they guess the URL.
+
+### Data Protection
+- **Environment Variables**: Sensitive data (Database URLs, Cloudinary Secrets, JWT Secrets) are securely stored in `.env` files and managed via cloud provider dashboards (Render/Vercel).
+- **CORS Protection**: The Express backend strictly limits Cross-Origin Resource Sharing to the specific Vercel frontend domain, preventing external malicious sites from hijacking API calls.
+
+### File Storage Security
+- User uploads (profile images and medical proofs) are stored securely on Cloudinary. The backend middleware filters files to ensure only images/PDFs under 5MB are accepted, preventing malicious script uploads.
+
+### Anti-Spoofing (QR Codes)
+- QR codes are not just simple IDs; they contain secure cryptographic tokens linked uniquely to the pass and the database. Scanning an old or fake QR code will immediately flag as "Invalid or Expired" on the Security dashboard.
+
+---
+
+## ⚡ Real-Time Interactions (Socket.io)
+When an HOD approves a pass, the backend emits a real-time socket event. If the Warden is currently online, their dashboard instantly updates and a toast notification pops up. The same happens for the Student when the Warden gives final approval.
 
 ---
 
@@ -99,12 +141,4 @@ npm run dev
 ```
 
 ---
-
-## ☁️ Deployment Architecture
-
-- **Frontend:** Deployed on **Vercel** with automatic CI/CD from the `main` branch.
-- **Backend:** Deployed on **Render** (Node.js environment) with CORS configured to accept frontend traffic.
-- **Database:** Hosted on **Railway** (MySQL instance).
-
----
-*Designed and built by Jagankumar M.*
+*© 2026 Designed and built by JAGANKUMAR. All rights reserved.*
