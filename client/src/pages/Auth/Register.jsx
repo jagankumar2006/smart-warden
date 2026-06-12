@@ -62,7 +62,7 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-dark-bg flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-bg flex items-center justify-center p-4 relative">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -165,6 +165,11 @@ const Register = () => {
           </p>
         </div>
       </motion.div>
+      <div className="absolute bottom-8 left-0 right-0 text-center">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          &copy; 2026 JAGANKUMAR. All rights reserved.
+        </p>
+      </div>
     </div>
   );
 };

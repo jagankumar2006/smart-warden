@@ -23,9 +23,14 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   // Show loading spinner while fetching user data
   if (isAuthenticated && !user) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-dark-bg">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        <p className="ml-4 text-gray-500 font-medium">Waking up server...</p>
+      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-dark-bg flex-col">
+        <div className="flex items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <p className="ml-4 text-gray-500 font-medium">Waking up server...</p>
+        </div>
+        <p className="mt-8 text-sm text-gray-400 dark:text-gray-500 tracking-wide font-medium">
+          Designed and built by JAGANKUMAR
+        </p>
       </div>
     );
   }

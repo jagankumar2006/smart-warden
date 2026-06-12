@@ -50,8 +50,13 @@ const DashboardLayout = () => {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-transparent p-6 md:p-8">
-          <Outlet />
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-transparent p-6 md:p-8 flex flex-col">
+          <div className="flex-1">
+            <Outlet />
+          </div>
+          <footer className="mt-8 text-center text-xs text-gray-400 dark:text-gray-500 py-4 border-t border-gray-200 dark:border-gray-800/60">
+            &copy; 2026 JAGANKUMAR. All rights reserved.
+          </footer>
         </main>
       </div>
     </div>

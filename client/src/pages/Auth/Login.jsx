@@ -147,6 +147,12 @@ const Login = () => {
           </div>
           
         </div>
+        
+        <div className="mt-8 text-center relative z-10">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            &copy; 2026 JAGANKUMAR. All rights reserved.
+          </p>
+        </div>
       </motion.div>
     </div>
   );
