@@ -50,24 +50,32 @@ exports.requestPasswordReset = async (req, res) => {
       `,
     };
 
+    // Send response immediately so UI doesn't hang
+    res.status(200).json({ message: 'If an account with that email exists, we have sent a reset link.' });
+
     if (process.env.GMAIL_EMAIL && process.env.GMAIL_APP_PASSWORD) {
-      await transporter.sendMail(mailOptions);
+      transporter.sendMail(mailOptions).catch(err => {
+        console.error('Failed to send email:', err);
+      });
     } else {
       console.log('Skipping email send because GMAIL credentials are not configured.');
       console.log('Reset URL:', resetUrl);
     }
 
-    await logAction({
+    logAction({
       actionType: 'PASSWORD_RESET_REQUESTED',
       description: `Password reset requested for ${email}`,
       userId: user.id,
       ipAddress: req.ip
+    }).catch(err => {
+      console.error('Failed to log action:', err);
     });
 
-    res.status(200).json({ message: 'If an account with that email exists, we have sent a reset link.' });
   } catch (error) {
     console.error('Password reset request error:', error);
-    res.status(500).json({ message: 'Server error during password reset request' });
+    if (!res.headersSent) {
+      res.status(500).json({ message: 'Server error during password reset request' });
+    }
   }
 };
 
