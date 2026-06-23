@@ -2,46 +2,49 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Lock, Mail, User, Building, ShieldCheck } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import useAuthStore from '../../store/useAuthStore';
 import useToastStore from '../../store/useToastStore';
 
+const registerSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  department: z.string().min(1, 'Department is required'),
+  hostel_block: z.string().min(1, 'Hostel block is required'),
+});
+
 const Register = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    department: '',
-    hostel_block: '',
-    role: 'STUDENT'
-  });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { setToken, setUser } = useAuthStore();
   const { addToast } = useToastStore();
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { role: 'STUDENT' }
+  });
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
+  const onRegister = async (data) => {
     setLoading(true);
 
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({ ...data, role: 'STUDENT' })
       });
       
-      const data = await res.json();
+      const resData = await res.json();
       
       if (res.ok) {
         // Automatically login after register
         const loginRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: formData.email, password: formData.password })
+          body: JSON.stringify({ email: data.email, password: data.password })
         });
         
         const loginData = await loginRes.json();
@@ -52,9 +55,9 @@ const Register = () => {
           navigate('/');
         }
       } else {
-        addToast(data.message || 'Registration failed', 'warning');
+        addToast(resData.message || 'Registration failed', 'warning');
       }
-    } catch (err) {
+    } catch {
       addToast('Network error during registration', 'warning');
     } finally {
       setLoading(false);
@@ -76,74 +79,68 @@ const Register = () => {
           <p className="text-gray-500 dark:text-gray-400 mt-2">Join Smart Warden today</p>
         </div>
 
-        <form onSubmit={handleRegister} className="space-y-4">
+        <form onSubmit={handleSubmit(onRegister)} className="space-y-4">
           <div>
             <div className="relative">
               <User className="absolute left-3 top-3 text-gray-400" size={20} />
               <input 
                 type="text" 
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="input-field pl-10"
+                {...register('name')}
+                className={`input-field pl-10 ${errors.name ? 'border-red-500' : ''}`}
                 placeholder="Full Name"
-                required
               />
             </div>
+            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
           </div>
           <div>
             <div className="relative">
               <Mail className="absolute left-3 top-3 text-gray-400" size={20} />
               <input 
                 type="email" 
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="input-field pl-10"
+                {...register('email')}
+                className={`input-field pl-10 ${errors.email ? 'border-red-500' : ''}`}
                 placeholder="College Email Address"
-                required
               />
             </div>
+            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
           </div>
           <div>
             <div className="relative">
               <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
               <input 
                 type="password" 
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="input-field pl-10"
+                {...register('password')}
+                className={`input-field pl-10 ${errors.password ? 'border-red-500' : ''}`}
                 placeholder="Password"
-                required
               />
             </div>
+            {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
           </div>
           
           <div className="grid grid-cols-2 gap-4">
-            <div className="relative">
-              <Building className="absolute left-3 top-3 text-gray-400" size={20} />
-              <input 
-                type="text" 
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                className="input-field pl-10"
-                placeholder="Department"
-                required
-              />
+            <div>
+              <div className="relative">
+                <Building className="absolute left-3 top-3 text-gray-400" size={20} />
+                <input 
+                  type="text" 
+                  {...register('department')}
+                  className={`input-field pl-10 ${errors.department ? 'border-red-500' : ''}`}
+                  placeholder="Department"
+                />
+              </div>
+              {errors.department && <p className="text-red-500 text-xs mt-1">{errors.department.message}</p>}
             </div>
-            <div className="relative">
-              <Building className="absolute left-3 top-3 text-gray-400" size={20} />
-              <input 
-                type="text" 
-                name="hostel_block"
-                value={formData.hostel_block}
-                onChange={handleChange}
-                className="input-field pl-10"
-                placeholder="Hostel Block"
-                required
-              />
+            <div>
+              <div className="relative">
+                <Building className="absolute left-3 top-3 text-gray-400" size={20} />
+                <input 
+                  type="text" 
+                  {...register('hostel_block')}
+                  className={`input-field pl-10 ${errors.hostel_block ? 'border-red-500' : ''}`}
+                  placeholder="Hostel Block"
+                />
+              </div>
+              {errors.hostel_block && <p className="text-red-500 text-xs mt-1">{errors.hostel_block.message}</p>}
             </div>
           </div>
 

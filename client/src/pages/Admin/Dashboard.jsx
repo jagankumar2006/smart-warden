@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, FileText, Settings, ShieldAlert, Edit2, CheckCircle, XCircle } from 'lucide-react';
+import { Users, FileText, Settings, ShieldAlert, Edit2, CheckCircle, XCircle, BarChart2, Activity, MapPin } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 import useToastStore from '../../store/useToastStore';
+import AuditLogsTab from './AuditLogsTab';
+import AnalyticsTab from './AnalyticsTab';
+import DepartmentsTab from './DepartmentsTab';
 
 const AdminDashboard = () => {
   const { token, user } = useAuthStore();
@@ -12,6 +15,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [editingUserId, setEditingUserId] = useState(null);
   const [editRole, setEditRole] = useState('');
+  const [activeTab, setActiveTab] = useState('overview');
 
   const fetchData = async () => {
     try {
@@ -86,7 +90,57 @@ const AdminDashboard = () => {
         <p className="text-gray-500 dark:text-gray-400 mt-2">Manage users and monitor system health.</p>
       </header>
 
-      {/* Stats Cards */}
+      {/* Tabs */}
+      <div className="flex space-x-1 border-b border-gray-200 dark:border-gray-700">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'overview'
+              ? 'border-primary-600 text-primary-600 dark:text-primary-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+        >
+          <Users size={18} /> Users
+        </button>
+        <button
+          onClick={() => setActiveTab('analytics')}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'analytics'
+              ? 'border-primary-600 text-primary-600 dark:text-primary-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+        >
+          <BarChart2 size={18} /> Analytics
+        </button>
+        <button
+          onClick={() => setActiveTab('audit-logs')}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'audit-logs'
+              ? 'border-primary-600 text-primary-600 dark:text-primary-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+        >
+          <Activity size={18} /> Audit Logs
+        </button>
+        <button
+          onClick={() => setActiveTab('departments')}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'departments'
+              ? 'border-primary-600 text-primary-600 dark:text-primary-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+        >
+          <MapPin size={18} /> Hostels & Depts
+        </button>
+      </div>
+
+      {activeTab === 'analytics' && <AnalyticsTab />}
+      {activeTab === 'audit-logs' && <AuditLogsTab />}
+      {activeTab === 'departments' && <DepartmentsTab />}
+
+      {activeTab === 'overview' && (
+        <>
+          {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6 border-l-4 border-l-blue-500">
           <div className="flex items-center justify-between">
@@ -208,6 +262,8 @@ const AdminDashboard = () => {
           </table>
         </div>
       </motion.div>
+        </>
+      )}
     </div>
   );
 };

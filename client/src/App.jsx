@@ -1,10 +1,12 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
 import useAuthStore from './store/useAuthStore';
 import useToastStore from './store/useToastStore';
+import useNotificationStore from './store/useNotificationStore';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
+import ForgotPassword from './pages/Auth/ForgotPassword';
+import ResetPassword from './pages/Auth/ResetPassword';
 import DashboardLayout from './layouts/DashboardLayout';
 import StudentDashboard from './pages/Student/Dashboard';
 import HodDashboard from './pages/HOD/Dashboard';
@@ -56,7 +58,7 @@ const DashboardRouter = () => {
 function App() {
   const { token, user, setUser, logout } = useAuthStore();
   const { addToast } = useToastStore();
-  const [socket, setSocket] = useState(null);
+  const { connectSocket, disconnectSocket, setNotifications } = useNotificationStore();
 
   useEffect(() => {
     if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -85,35 +87,32 @@ function App() {
     fetchUser();
   }, [token, setUser, logout]);
 
-  // Socket.IO Integration
+  // Socket.IO and Notifications Integration
   useEffect(() => {
     if (token && user) {
-      const newSocket = io(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}`, {
-        auth: { token }
-      });
+      connectSocket(user.id, user.role);
 
-      newSocket.on('connect', () => {
-        console.log('Connected to real-time server');
-        // Join specific rooms to receive targeted notifications
-        newSocket.emit('join', user.id);
-        newSocket.emit('join', user.role);
-      });
-
-      newSocket.on('gate_pass_update', (data) => {
-        addToast(data.message, data.status === 'REJECTED' ? 'warning' : 'success');
-      });
-
-      newSocket.on('new_gate_pass', (data) => {
-        addToast(data.message, 'info');
-      });
-
-      setSocket(newSocket);
+      // Fetch initial notifications
+      const fetchNotifications = async () => {
+        try {
+          const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/notifications`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setNotifications(data.notifications);
+          }
+        } catch (error) {
+          console.error('Failed to fetch notifications', error);
+        }
+      };
+      fetchNotifications();
 
       return () => {
-        newSocket.disconnect();
+        disconnectSocket();
       };
     }
-  }, [token, user, addToast]);
+  }, [token, user, connectSocket, disconnectSocket, setNotifications]);
 
   return (
     <Router>
@@ -122,6 +121,8 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
           
           <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
             <Route index element={<DashboardRouter />} />

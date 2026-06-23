@@ -46,7 +46,7 @@ const NewPassModal = ({ isOpen, onClose, onSuccess }) => {
         const data = await res.json();
         setError(data.message || 'Failed to create request');
       }
-    } catch (err) {
+    } catch {
       setError('Network error');
     } finally {
       setLoading(false);

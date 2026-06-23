@@ -32,10 +32,12 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 const authRoutes = require('./routes/authRoutes');
 const gatePassRoutes = require('./routes/gatePassRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const passwordRecoveryRoutes = require('./routes/passwordRecoveryRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/gatepass', gatePassRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/recovery', passwordRecoveryRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -12,7 +12,24 @@ const HodDashboard = () => {
   const { token, user } = useAuthStore();
   const location = useLocation();
 
-  const fetchPasses = async () => {
+  useEffect(() => {
+    const fetchPasses = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/gatepass`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setPasses(data.gatePasses);
+        }
+      } catch (error) {
+        console.error('Error fetching passes:', error);
+      }
+    };
+    fetchPasses();
+  }, [token]);
+
+  const fetchPassesAfterAction = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/gatepass`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -25,10 +42,6 @@ const HodDashboard = () => {
       console.error('Error fetching passes:', error);
     }
   };
-
-  useEffect(() => {
-    fetchPasses();
-  }, [token]);
 
   const handleAction = async (id, action, reason = '') => {
     setLoadingId(id);
@@ -47,7 +60,7 @@ const HodDashboard = () => {
       });
 
       if (res.ok) {
-        fetchPasses(); // refresh list
+        fetchPassesAfterAction(); // refresh list
       }
     } catch (error) {
       console.error('Error updating pass:', error);

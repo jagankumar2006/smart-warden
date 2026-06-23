@@ -1,17 +1,34 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Check, X, FileText, User } from 'lucide-react';
+import { Check, X, User } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const WardenDashboard = () => {
   const [passes, setPasses] = useState([]);
   const [loadingId, setLoadingId] = useState(null);
-  const { token, user } = useAuthStore();
+  const { token } = useAuthStore();
   const location = useLocation();
 
-  const fetchPasses = async () => {
+  useEffect(() => {
+    const fetchPasses = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/gatepass`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setPasses(data.gatePasses);
+        }
+      } catch (error) {
+        console.error('Error fetching passes:', error);
+      }
+    };
+    fetchPasses();
+  }, [token]);
+
+  const fetchPassesAfterAction = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/gatepass`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -24,10 +41,6 @@ const WardenDashboard = () => {
       console.error('Error fetching passes:', error);
     }
   };
-
-  useEffect(() => {
-    fetchPasses();
-  }, [token]);
 
   const handleAction = async (id, action, reason = '') => {
     setLoadingId(id);
@@ -46,7 +59,7 @@ const WardenDashboard = () => {
       });
 
       if (res.ok) {
-        fetchPasses();
+        fetchPassesAfterAction();
       }
     } catch (error) {
       console.error('Error updating pass:', error);

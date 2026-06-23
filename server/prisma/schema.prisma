@@ -8,7 +8,6 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -37,11 +36,14 @@ model User {
   department    String?
   hostel_block  String?
   profile_image String?
+  phone_number  String?
+  emergency_contact String?
   created_at    DateTime       @default(now())
   updated_at    DateTime       @updatedAt
 
   gatePasses    GatePass[]
   notifications Notification[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model GatePass {
@@ -70,5 +72,37 @@ model Notification {
   title      String
   message    String
   is_read    Boolean  @default(false)
+  created_at DateTime @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  actionType  String
+  description String
+  userId      String?
+  userRole    String?
+  passId      String?
+  ipAddress   String?
+  timestamp   DateTime @default(now())
+}
+
+model Department {
+  id         String   @id @default(uuid())
+  name       String   @unique
+  created_at DateTime @default(now())
+}
+
+model HostelBlock {
+  id         String   @id @default(uuid())
+  name       String   @unique
+  created_at DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id         String   @id @default(uuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  token      String   @unique
+  expires_at DateTime
   created_at DateTime @default(now())
 }

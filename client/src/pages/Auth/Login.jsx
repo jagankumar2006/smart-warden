@@ -2,18 +2,26 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Lock, Mail, ArrowRight } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import useAuthStore from '../../store/useAuthStore';
 
+const loginSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(1, 'Password is required')
+});
+
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    resolver: zodResolver(loginSchema)
+  });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
   const { login } = useAuthStore();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data) => {
     setLoading(true);
     setError('');
 
@@ -21,18 +29,18 @@ const Login = () => {
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(data),
       });
 
-      const data = await res.json();
+      const resData = await res.json();
 
       if (res.ok) {
-        login(data.user, data.token);
+        login(resData.user, resData.token);
         navigate('/');
       } else {
-        setError(data.message || 'Login failed');
+        setError(resData.message || 'Login failed');
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
@@ -75,7 +83,7 @@ const Login = () => {
             </motion.div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email Address</label>
               <div className="relative">
@@ -84,13 +92,12 @@ const Login = () => {
                 </div>
                 <input 
                   type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="input-field pl-10" 
+                  {...register('email')}
+                  className={`input-field pl-10 ${errors.email ? 'border-red-500' : ''}`} 
                   placeholder="student@university.edu"
-                  required
                 />
               </div>
+              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
             </div>
 
             <div>
@@ -101,13 +108,12 @@ const Login = () => {
                 </div>
                 <input 
                   type="password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="input-field pl-10" 
+                  {...register('password')}
+                  className={`input-field pl-10 ${errors.password ? 'border-red-500' : ''}`} 
                   placeholder="••••••••"
-                  required
                 />
               </div>
+              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
             </div>
 
             <div className="flex items-center justify-between mt-2">
@@ -117,9 +123,9 @@ const Login = () => {
                   Remember me
                 </label>
               </div>
-              <a href="#" className="text-sm font-medium text-primary-600 hover:text-primary-500">
+              <Link to="/forgot-password" className="text-sm font-medium text-primary-600 hover:text-primary-500">
                 Forgot password?
-              </a>
+              </Link>
             </div>
 
             <motion.button 

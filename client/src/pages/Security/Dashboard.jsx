@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { QrCode, CheckCircle, Search, User, FileText } from 'lucide-react';
+import { QrCode, CheckCircle, Search, User, XCircle } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 import QRScanner from '../../components/ui/QRScanner';
 
@@ -10,27 +10,54 @@ const SecurityDashboard = () => {
   const [scanResult, setScanResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isScannerActive, setIsScannerActive] = useState(false);
+  const [activeTab, setActiveTab] = useState('active');
+  const [recentScans, setRecentScans] = useState([]);
   const { token } = useAuthStore();
 
-  const fetchPasses = async () => {
+  useEffect(() => {
+    const fetchPasses = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/gatepass`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          // Filter passes that are ready for exit OR currently out of campus
+          const activePasses = data.gatePasses.filter(p => p.status === 'APPROVED' || p.status === 'EXITED');
+          setPasses(activePasses);
+          
+          // Setup recent scans (recently RETURNED or EXITED)
+          const recent = data.gatePasses
+            .filter(p => p.status === 'RETURNED' || p.status === 'EXITED')
+            .sort((a, b) => new Date(b.updated_at || b.out_date) - new Date(a.updated_at || a.out_date));
+          setRecentScans(recent);
+        }
+      } catch (error) {
+        console.error('Error fetching passes:', error);
+      }
+    };
+    fetchPasses();
+  }, [token]);
+
+  const fetchPassesAfterAction = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/gatepass`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
-        // Filter passes that are ready for exit OR currently out of campus
         const activePasses = data.gatePasses.filter(p => p.status === 'APPROVED' || p.status === 'EXITED');
         setPasses(activePasses);
+        
+        const recent = data.gatePasses
+          .filter(p => p.status === 'RETURNED' || p.status === 'EXITED')
+          .sort((a, b) => new Date(b.updated_at || b.out_date) - new Date(a.updated_at || a.out_date));
+        setRecentScans(recent);
       }
     } catch (error) {
       console.error('Error fetching passes:', error);
     }
   };
-
-  useEffect(() => {
-    fetchPasses();
-  }, [token]);
 
   const processScan = (scannedToken) => {
     setLoading(true);
@@ -82,13 +109,12 @@ const SecurityDashboard = () => {
       if (res.ok) {
         const msg = actionStatus === 'EXITED' ? 'Student successfully marked as EXITED.' : 'Student successfully RETURNED.';
         setScanResult({ success: true, message: msg });
-        fetchPasses();
+        fetchPassesAfterAction();
       } else {
         const errorData = await res.json().catch(() => null);
         setScanResult({ success: false, message: errorData?.message || `Failed to update status. Please check server logs.` });
       }
-    } catch (error) {
-      console.error(`Error marking as ${actionStatus}:`, error);
+    } catch {
       setScanResult({ success: false, message: 'Network error or server is unreachable.' });
     }
   };
@@ -197,40 +223,94 @@ const SecurityDashboard = () => {
           )}
         </div>
 
-        {/* List of Active Passes */}
-        <div className="lg:col-span-2">
-          <div className="glass-card p-6 h-full">
-             <h3 className="text-lg font-bold dark:text-white mb-6">Active Gate Passes</h3>
+        {/* Right Column: Tabs and Lists */}
+        <div className="lg:col-span-2 flex flex-col space-y-4">
+          <div className="flex space-x-4 border-b border-gray-200 dark:border-gray-700">
+            <button
+              onClick={() => setActiveTab('active')}
+              className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'active'
+                  ? 'border-primary-600 text-primary-600 dark:text-primary-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              Active Gate Passes
+            </button>
+            <button
+              onClick={() => setActiveTab('recent')}
+              className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'recent'
+                  ? 'border-primary-600 text-primary-600 dark:text-primary-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              Recent Scans
+            </button>
+          </div>
+
+          <div className="glass-card p-6 flex-1">
              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-                {passes.length === 0 ? (
-                  <p className="text-center text-gray-500 py-8">No active passes at the moment.</p>
-                ) : (
-                  passes.map(pass => (
-                    <div key={pass.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-gray-50 dark:bg-gray-800/40 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800/60 transition-colors border border-transparent hover:border-gray-200 dark:hover:border-gray-700 cursor-pointer" onClick={() => setQrToken(pass.id)}>
-                      <div className="flex items-center space-x-4 mb-4 sm:mb-0">
-                        <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-600 dark:text-primary-400 overflow-hidden">
-                          {pass.student.profile_image ? (
-                            <img src={(pass.student.profile_image?.startsWith('http') ? pass.student.profile_image : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${pass.student.profile_image}`)} alt="Profile" className="w-full h-full object-cover" />
-                          ) : (
-                            <User size={20} />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-bold text-gray-900 dark:text-white">{pass.student.name}</p>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">ID: {pass.id.split('-')[0]}...</span>
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${pass.status === 'APPROVED' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
-                              {pass.status}
-                            </span>
+                {activeTab === 'active' ? (
+                  passes.length === 0 ? (
+                    <p className="text-center text-gray-500 py-8">No active passes at the moment.</p>
+                  ) : (
+                    passes.map(pass => (
+                      <div key={pass.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-gray-50 dark:bg-gray-800/40 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800/60 transition-colors border border-transparent hover:border-gray-200 dark:hover:border-gray-700 cursor-pointer" onClick={() => setQrToken(pass.id)}>
+                        <div className="flex items-center space-x-4 mb-4 sm:mb-0">
+                          <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-600 dark:text-primary-400 overflow-hidden">
+                            {pass.student.profile_image ? (
+                              <img src={(pass.student.profile_image?.startsWith('http') ? pass.student.profile_image : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${pass.student.profile_image}`)} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                              <User size={20} />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-bold text-gray-900 dark:text-white">{pass.student.name}</p>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">ID: {pass.id.split('-')[0]}...</span>
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${pass.status === 'APPROVED' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
+                                {pass.status}
+                              </span>
+                            </div>
                           </div>
                         </div>
+                        <div className="text-right w-full sm:w-auto">
+                          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Out: {new Date(pass.out_date).toLocaleDateString()}</p>
+                          <p className="text-xs text-gray-500">Return: {new Date(pass.return_date).toLocaleDateString()}</p>
+                        </div>
                       </div>
-                      <div className="text-right w-full sm:w-auto">
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Out: {new Date(pass.out_date).toLocaleDateString()}</p>
-                        <p className="text-xs text-gray-500">Return: {new Date(pass.return_date).toLocaleDateString()}</p>
+                    ))
+                  )
+                ) : (
+                  recentScans.length === 0 ? (
+                    <p className="text-center text-gray-500 py-8">No recent scans.</p>
+                  ) : (
+                    recentScans.map(pass => (
+                      <div key={pass.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-gray-50 dark:bg-gray-800/40 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800/60 transition-colors border border-transparent border-l-4 border-l-gray-300">
+                        <div className="flex items-center space-x-4 mb-4 sm:mb-0">
+                          <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-400 overflow-hidden">
+                            {pass.student.profile_image ? (
+                              <img src={(pass.student.profile_image?.startsWith('http') ? pass.student.profile_image : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${pass.student.profile_image}`)} alt="Profile" className="w-full h-full object-cover grayscale" />
+                            ) : (
+                              <User size={20} />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-bold text-gray-900 dark:text-white">{pass.student.name}</p>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">ID: {pass.id.split('-')[0]}...</span>
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${pass.status === 'RETURNED' ? 'bg-gray-200 text-gray-700' : 'bg-blue-100 text-blue-600'}`}>
+                                {pass.status}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right w-full sm:w-auto">
+                          <p className="text-xs text-gray-500">Last Scanned: {new Date(pass.updated_at || pass.out_date).toLocaleString()}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    ))
+                  )
                 )}
              </div>
           </div>
@@ -240,8 +320,5 @@ const SecurityDashboard = () => {
     </div>
   );
 };
-
-// Re-importing XCircle since it was used but not explicitly imported at the top
-import { XCircle } from 'lucide-react';
 
 export default SecurityDashboard;

@@ -1,17 +1,55 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { User, Mail, Shield, Building, Lock } from 'lucide-react';
+import { Mail, Shield, Building, Lock, Phone } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import useAuthStore from '../../store/useAuthStore';
 import useToastStore from '../../store/useToastStore';
+
+const profileSchema = z.object({
+  phone_number: z.string().optional(),
+  emergency_contact: z.string().optional()
+});
 
 const Settings = () => {
   const { user } = useAuthStore();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const { addToast } = useToastStore();
   const fileInputRef = useRef(null);
+
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      phone_number: user?.phone_number || '',
+      emergency_contact: user?.emergency_contact || ''
+    }
+  });
+
+  const onUpdateProfile = async (data) => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${useAuthStore.getState().token}`
+        },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) {
+        addToast('Profile updated successfully', 'success');
+        const currentUser = useAuthStore.getState().user;
+        useAuthStore.getState().setUser({ ...currentUser, ...data });
+      } else {
+        const errorData = await res.json().catch(() => null);
+        addToast(errorData?.message || 'Failed to update profile', 'error');
+      }
+    } catch (error) {
+      addToast('Network error while updating profile', 'error');
+    }
+  };
 
   const handleProfilePictureUpload = async (e) => {
     const file = e.target.files[0];
@@ -51,7 +89,6 @@ const Settings = () => {
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
-    setLoading(true);
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/password`, {
         method: 'PUT',
@@ -72,8 +109,6 @@ const Settings = () => {
       }
     } catch (error) {
       addToast('Network error while updating password', 'warning');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -164,6 +199,48 @@ const Settings = () => {
                 </div>
               )}
             </div>
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="glass-card p-8"
+          >
+            <h3 className="text-lg font-bold dark:text-white mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">Contact Information</h3>
+            <form onSubmit={handleSubmit(onUpdateProfile)} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm text-gray-500 dark:text-gray-400 mb-2">Phone Number</label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-2.5 text-gray-400" size={18} />
+                    <input 
+                      type="text" 
+                      {...register('phone_number')}
+                      className={`input-field pl-10 ${errors.phone_number ? 'border-red-500' : ''}`}
+                      placeholder="+1 234 567 890"
+                    />
+                  </div>
+                  {errors.phone_number && <p className="text-red-500 text-xs mt-1">{errors.phone_number.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-500 dark:text-gray-400 mb-2">Emergency Contact</label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-2.5 text-gray-400" size={18} />
+                    <input 
+                      type="text" 
+                      {...register('emergency_contact')}
+                      className={`input-field pl-10 ${errors.emergency_contact ? 'border-red-500' : ''}`}
+                      placeholder="+1 987 654 321"
+                    />
+                  </div>
+                  {errors.emergency_contact && <p className="text-red-500 text-xs mt-1">{errors.emergency_contact.message}</p>}
+                </div>
+              </div>
+              <button type="submit" disabled={isSubmitting} className="btn-primary py-2 px-6 mt-4">
+                {isSubmitting ? 'Saving...' : 'Save Profile Details'}
+              </button>
+            </form>
           </motion.div>
         </div>
 

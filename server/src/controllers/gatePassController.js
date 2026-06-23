@@ -1,5 +1,7 @@
 const db = require('../utils/db');
 const crypto = require('crypto');
+const { logAction } = require('../utils/auditLogger');
+const { notifyUser, notifyRole } = require('../utils/notificationService');
 
 exports.createGatePass = async (req, res) => {
   try {
@@ -17,11 +19,18 @@ exports.createGatePass = async (req, res) => {
       [gatePassId, student_id, reason, document_url, outDateFormatted, returnDateFormatted, date, date]
     );
 
-    // Notify HOD via socket
+    // Notify HOD via socket and save to DB
     const io = req.app.get('io');
-    if (io) {
-      io.to('HOD').emit('new_gate_pass', { message: 'New gate pass request', gatePassId });
-    }
+    await notifyRole(io, 'HOD', 'New Pass Request', 'A new gate pass request has been submitted.');
+
+    await logAction({
+      actionType: 'PASS_CREATED',
+      description: `Gate pass requested`,
+      userId: student_id,
+      userRole: 'STUDENT',
+      passId: gatePassId,
+      ipAddress: req.ip || req.connection.remoteAddress
+    });
 
     res.status(201).json({ message: 'Gate pass requested successfully', gatePassId });
   } catch (error) {
@@ -116,14 +125,24 @@ exports.updateGatePassStatus = async (req, res) => {
       params
     );
 
-    // Notify user
+    // Notify user and save to DB
     const io = req.app.get('io');
-    if (io) {
-      io.to(gatePass.student_id).emit('gate_pass_update', { message: `Your gate pass is now ${status}`, status });
-      if (status === 'PENDING_WARDEN') {
-        io.to('WARDEN').emit('new_gate_pass', { message: 'New gate pass request pending warden approval' });
-      }
+    await notifyUser(io, gatePass.student_id, 'Pass Update', `Your gate pass is now ${status}`);
+    
+    if (status === 'PENDING_WARDEN') {
+      await notifyRole(io, 'WARDEN', 'Pending Approval', 'A new gate pass request is pending warden approval.');
+    } else if (status === 'APPROVED') {
+      await notifyRole(io, 'SECURITY', 'Pass Approved', 'A new gate pass has been approved and is active.');
     }
+
+    await logAction({
+      actionType: `PASS_${status}`,
+      description: `Gate pass status updated to ${status}`,
+      userId: req.user.userId,
+      userRole: role,
+      passId: id,
+      ipAddress: req.ip || req.connection.remoteAddress
+    });
 
     res.status(200).json({ message: `Gate pass updated to ${status}` });
   } catch (error) {

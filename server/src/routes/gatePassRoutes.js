@@ -3,6 +3,8 @@ const router = express.Router();
 const gatePassController = require('../controllers/gatePassController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
+const validate = require('../middleware/validate');
+const gatePassValidation = require('../validations/gatePass.validation');
 
 /**
  * @swagger
@@ -23,8 +25,8 @@ const upload = require('../middleware/uploadMiddleware');
  *       200:
  *         description: A list of gate passes
  */
-router.post('/', protect, authorize('STUDENT'), upload.single('document'), gatePassController.createGatePass);
+router.post('/', protect, authorize('STUDENT'), upload.single('document'), validate(gatePassValidation.createGatePass), gatePassController.createGatePass);
 router.get('/', protect, gatePassController.getGatePasses);
-router.patch('/:id/status', protect, authorize('HOD', 'WARDEN', 'SECURITY'), gatePassController.updateGatePassStatus);
+router.patch('/:id/status', protect, authorize('HOD', 'WARDEN', 'SECURITY'), validate(gatePassValidation.updateGatePassStatus), gatePassController.updateGatePassStatus);
 
 module.exports = router;

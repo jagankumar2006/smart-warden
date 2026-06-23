@@ -3,6 +3,8 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
+const validate = require('../middleware/validate');
+const authValidation = require('../validations/auth.validation');
 
 /**
  * @swagger
@@ -37,7 +39,7 @@ const upload = require('../middleware/uploadMiddleware');
  *       201:
  *         description: User registered successfully
  */
-router.post('/register', authController.register);
+router.post('/register', validate(authValidation.register), authController.register);
 
 /**
  * @swagger
@@ -60,10 +62,13 @@ router.post('/register', authController.register);
  *       200:
  *         description: Login successful
  */
-router.post('/login', authController.login);
+router.post('/login', validate(authValidation.login), authController.login);
 
 router.get('/me', protect, authController.getMe);
-router.put('/password', protect, authController.updatePassword);
+router.put('/password', protect, validate(authValidation.updatePassword), authController.updatePassword);
+router.put('/profile', protect, validate(authValidation.updateProfile), authController.updateProfile);
 router.put('/profile-picture', protect, upload.single('profile_image'), authController.updateProfilePicture);
+router.get('/notifications', protect, authController.getNotifications);
+router.patch('/notifications/:id/read', protect, authController.markNotificationRead);
 
 module.exports = router;

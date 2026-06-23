@@ -2,6 +2,7 @@ const db = require('../utils/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const { logAction } = require('../utils/auditLogger');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key_for_smart_warden';
 
@@ -23,6 +24,14 @@ exports.register = async (req, res) => {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [userId, name, email, hashedPassword, role || 'STUDENT', department || null, hostel_block || null, date, date]
     );
+
+    await logAction({
+      actionType: 'USER_REGISTER',
+      description: `User ${email} registered`,
+      userId: userId,
+      userRole: role || 'STUDENT',
+      ipAddress: req.ip || req.connection.remoteAddress
+    });
 
     res.status(201).json({ message: 'User registered successfully', userId });
   } catch (error) {
@@ -56,6 +65,14 @@ exports.login = async (req, res) => {
 
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1d' });
 
+    await logAction({
+      actionType: 'USER_LOGIN',
+      description: `User ${email} logged in`,
+      userId: user.id,
+      userRole: user.role,
+      ipAddress: req.ip || req.connection.remoteAddress
+    });
+
     res.status(200).json({
       message: 'Login successful',
       token,
@@ -70,7 +87,7 @@ exports.login = async (req, res) => {
 exports.getMe = async (req, res) => {
   try {
     const [users] = await db.execute(
-      'SELECT id, name, email, role, department, hostel_block, profile_image FROM User WHERE id = ?',
+      'SELECT id, name, email, role, department, hostel_block, profile_image, phone_number, emergency_contact FROM User WHERE id = ?',
       [req.user.userId]
     );
     const user = users[0];
@@ -134,5 +151,52 @@ exports.updateProfilePicture = async (req, res) => {
   } catch (error) {
     console.error('Update profile picture error:', error);
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { phone_number, emergency_contact } = req.body;
+    const date = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+    await db.execute(
+      'UPDATE User SET phone_number = ?, emergency_contact = ?, updated_at = ? WHERE id = ?',
+      [phone_number || null, emergency_contact || null, date, userId]
+    );
+
+    res.status(200).json({ message: 'Profile updated successfully' });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ message: 'Server error updating profile' });
+  }
+};
+
+exports.getNotifications = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const [notifications] = await db.execute(
+      'SELECT * FROM Notification WHERE user_id = ? ORDER BY created_at DESC',
+      [userId]
+    );
+    res.status(200).json({ notifications });
+  } catch (error) {
+    console.error('Get notifications error:', error);
+    res.status(500).json({ message: 'Server error fetching notifications' });
+  }
+};
+
+exports.markNotificationRead = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+    await db.execute(
+      'UPDATE Notification SET is_read = true WHERE id = ? AND user_id = ?',
+      [id, userId]
+    );
+    res.status(200).json({ message: 'Notification marked as read' });
+  } catch (error) {
+    console.error('Mark notification read error:', error);
+    res.status(500).json({ message: 'Server error marking notification as read' });
   }
 };

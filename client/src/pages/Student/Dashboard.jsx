@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+
 import { motion } from 'framer-motion';
 import { Plus, Clock, CheckCircle, XCircle, FileText, QrCode } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
@@ -10,10 +10,28 @@ const StudentDashboard = () => {
   const [passes, setPasses] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPassForQr, setSelectedPassForQr] = useState(null);
+  const [activeTab, setActiveTab] = useState('overview');
   const { token } = useAuthStore();
-  const location = useLocation();
 
-  const fetchPasses = async () => {
+  useEffect(() => {
+    const fetchPasses = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/gatepass`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setPasses(data.gatePasses);
+        }
+      } catch (error) {
+        console.error('Error fetching passes:', error);
+      }
+    };
+    fetchPasses();
+    // In a real app, socket listener would be attached here
+  }, [token]);
+
+  const fetchPassesForModal = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/gatepass`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -26,11 +44,6 @@ const StudentDashboard = () => {
       console.error('Error fetching passes:', error);
     }
   };
-
-  useEffect(() => {
-    fetchPasses();
-    // In a real app, socket listener would be attached here
-  }, [token]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -70,7 +83,31 @@ const StudentDashboard = () => {
         </motion.button>
       </div>
 
-      {location.pathname === '/' ? (
+      {/* Tabs */}
+      <div className="flex space-x-4 border-b border-gray-200 dark:border-gray-700 mb-6">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'overview'
+              ? 'border-primary-600 text-primary-600 dark:text-primary-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+        >
+          Overview
+        </button>
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'history'
+              ? 'border-primary-600 text-primary-600 dark:text-primary-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+        >
+          History Portal
+        </button>
+      </div>
+
+      {activeTab === 'overview' ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="glass-card p-6 border-l-4 border-l-primary-500">
             <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium">Total Requests</h3>
@@ -159,7 +196,7 @@ const StudentDashboard = () => {
       <NewPassModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        onSuccess={fetchPasses} 
+        onSuccess={fetchPassesForModal} 
       />
       
       <QrModal 

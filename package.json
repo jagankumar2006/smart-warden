@@ -1,0 +1,30 @@
+{
+  "name": "smart-warden",
+  "version": "1.0.0",
+  "description": "**Smart Warden** is a comprehensive, full-stack role-based application designed to digitize and streamline the hostel gate pass workflow for educational institutions. It replaces manual paper-based logs with a highly secure, real-time digital authorization system.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jagankumar2006/smart-warden.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/jagankumar2006/smart-warden/issues"
+  },
+  "homepage": "https://github.com/jagankumar2006/smart-warden#readme",
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8"
+  },
+  "lint-staged": {
+    "client/**/*.{js,jsx}": "npm run lint --prefix client",
+    "server/**/*.js": "npm run lint --prefix server"
+  }
+}
