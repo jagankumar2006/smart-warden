@@ -2,9 +2,11 @@ const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
+require('dotenv').config();
+
 async function addSecurityGuard() {
   try {
-    const connection = await mysql.createConnection('mysql://root:Jagan%402006@127.0.0.1:3306/smart_warden');
+    const connection = await mysql.createConnection(process.env.LOCAL_DATABASE_URL || process.env.DATABASE_URL);
     const passwordHash = bcrypt.hashSync('password123', 10);
     const date = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
