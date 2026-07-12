@@ -1,23 +1,10 @@
 const db = require('../utils/db');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const { logAction } = require('../utils/auditLogger');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  family: 4, // Force IPv4 explicitly
-  auth: {
-    user: process.env.GMAIL_EMAIL,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-  tls: {
-    rejectUnauthorized: false
-  }
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 exports.requestPasswordReset = async (req, res) => {
   try {
@@ -44,28 +31,26 @@ exports.requestPasswordReset = async (req, res) => {
 
     const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
 
-    const mailOptions = {
-      from: process.env.GMAIL_EMAIL || 'smartwarden@noreply.com',
-      to: email,
-      subject: 'Smart Warden - Password Reset Request',
-      html: `
-        <h1>Password Reset</h1>
-        <p>Hi ${user.name},</p>
-        <p>You requested a password reset. Click the link below to reset your password. This link is valid for 30 minutes.</p>
-        <a href="${resetUrl}">Reset Password</a>
-        <p>If you didn't request this, you can ignore this email.</p>
-      `,
-    };
-
     // Send response immediately so UI doesn't hang
     res.status(200).json({ message: 'If an account with that email exists, we have sent a reset link.' });
 
-    if (process.env.GMAIL_EMAIL && process.env.GMAIL_APP_PASSWORD) {
-      transporter.sendMail(mailOptions).catch(err => {
-        console.error('Failed to send email:', err);
+    if (process.env.RESEND_API_KEY) {
+      resend.emails.send({
+        from: 'Smart Warden <onboarding@resend.dev>',
+        to: email,
+        subject: 'Smart Warden - Password Reset Request',
+        html: `
+          <h1>Password Reset</h1>
+          <p>Hi ${user.name},</p>
+          <p>You requested a password reset. Click the link below to reset your password. This link is valid for 30 minutes.</p>
+          <a href="${resetUrl}">Reset Password</a>
+          <p>If you didn't request this, you can ignore this email.</p>
+        `
+      }).catch(err => {
+        console.error('Failed to send email via Resend:', err);
       });
     } else {
-      console.log('Skipping email send because GMAIL credentials are not configured.');
+      console.log('Skipping email send because RESEND_API_KEY is not configured.');
       console.log('Reset URL:', resetUrl);
     }
 
